@@ -9,27 +9,75 @@ OpenAI-compatible). Verifi is a live showcase of what BTL is *for*: one API key,
 one endpoint, hundreds of models — route each job to the cheapest capable model
 and watch the real cost accrue from BTL's response headers.
 
-Built for the **BTL Runtime Hackathon** (Jul 3–5, 2026).
+Built for the **BTL Runtime Hackathon** (Jul 3–5, 2026). Inspired by TestSprite
+and tester.army — rebuilt on the BTL runtime.
 
 ---
 
-## What it does
+## Architecture
 
-1. **Explore** — Playwright loads the target URL and extracts a compact,
-   numbered map of the page's interactive elements + a screenshot.
-2. **Plan** — the planner model reads that map (plus an optional product
-   description) and writes a prioritized set of end-to-end test cases.
-3. **Execute** — for each test, a vision agent loop drives a real browser:
-   *screenshot + element list → decide the next action → click/type/assert →
-   repeat* until it declares pass or fail. Every step is screenshotted.
-4. **Analyze** — every failing test is handed to a frontier reasoning model that
-   returns a structured bug report: severity, summary, **root cause**, and a
-   **suggested fix**, anchored to the failing-step screenshot.
-5. **Report** — a live dashboard streams the whole run over SSE: test cards,
-   per-step thoughts & screenshots, bug reports, and a **BTL runtime telemetry**
-   panel.
+```mermaid
+flowchart TB
+    User(["👤 User"])
+    Target[("🌐 Target web app<br/>(any URL)")]
+    BTL{{"⚡ BTL Runtime<br/>POST /v1/chat/completions<br/>OpenAI-compatible · 300+ models"}}
 
-Inspired by TestSprite and tester.army — rebuilt on the BTL runtime.
+    subgraph Browser["🖥️ Client — Next.js UI"]
+        Dash["Dashboard<br/>new run + recent runs"]
+        RunView["Live Run view<br/>SSE stream"]
+    end
+
+    subgraph Server["🧩 Next.js server (Node runtime)"]
+        API["API routes<br/>POST /api/runs · GET /:id · /stream"]
+        Orch["Orchestrator<br/>runs pipeline, emits events"]
+        subgraph Engine["QA Engine — src/lib"]
+            Planner["📝 Planner<br/>gemini-2.5-flash"]
+            Executor["🕹️ Executor<br/>vision loop · gpt-4o-mini"]
+            Analyst["🔬 Analyst<br/>gpt-5-mini"]
+            PW["🎭 Playwright<br/>real Chromium"]
+        end
+        BTLClient["BTL client<br/>reads x-btl-* → cost ledger"]
+        Store[("Store<br/>.data/runs + public/runs")]
+    end
+
+    User -->|paste URL| Dash -->|POST /api/runs| API --> Orch
+    Orch --> Planner & Executor & Analyst
+    Planner & Executor & Analyst -->|chat| BTLClient --> BTL
+    Executor <-->|click / type / screenshot| PW <--> Target
+    Orch --> Store
+    Orch -. SSE events .-> RunView --> User
+```
+
+### Run pipeline
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant O as Orchestrator
+    participant PW as Playwright
+    participant BTL as BTL Runtime
+    participant DB as Store
+
+    U->>O: start run (url, description)
+    O->>PW: launch Chromium, load URL
+    PW-->>O: element map + screenshot
+    O->>BTL: plan tests (gemini-2.5-flash)
+    BTL-->>O: N test cases
+    loop each test case
+        loop until pass/fail or step budget
+            O->>PW: snapshot (screenshot + elements)
+            O->>BTL: decide next action (gpt-4o-mini, vision)
+            BTL-->>O: {thought, action}
+            O->>PW: execute (click/type/assert) + screenshot
+        end
+        alt test failed
+            O->>BTL: analyze failure (gpt-5-mini)
+            BTL-->>O: bug report (severity, root cause, fix)
+        end
+        O->>DB: persist + stream events (SSE)
+    end
+    O-->>U: summary + live telemetry
+```
 
 ---
 
@@ -49,53 +97,56 @@ providers**, with no code changes — just env config:
 | Stage | Model | Provider | Why |
 |-------|-------|----------|-----|
 | Planning | `gemini-2.5-flash` | Google | fast, cheap, great at structured JSON test plans |
-| Browser agent (high volume, ~15–20 calls/run) | `gpt-4o-mini` | OpenAI | cheap **vision** model — the workhorse of the loop |
+| Browser agent *(high volume, ~15–20 calls/run)* | `gpt-4o-mini` | OpenAI | cheap **vision** model — the workhorse of the loop |
 | Failure analysis | `gpt-5-mini` | OpenAI | frontier reasoning, only where it matters |
 
-This is the BTL value prop in miniature: **cheap model for the volume, frontier
-model for the hard reasoning — one key, one endpoint, many providers.**
+The BTL value prop in miniature: **cheap model for the volume, frontier model for
+the hard reasoning — one key, one endpoint, many providers.**
 
 ### 2. Live cost telemetry from BTL's proprietary headers
 Every call reads BTL's response headers and folds them into a per-run ledger,
 surfaced live in the UI:
 
-- `x-btl-customer-charge` → **Runtime spend**
-- `x-btl-benchmark-cost` → **Benchmark reference**
-- `x-btl-saved` → **Saved on reruns** (exact-cache)
-- `x-btl-cache-tier` → **cache hits**
+| Header | Shown as |
+|--------|----------|
+| `x-btl-customer-charge` | **Runtime spend** |
+| `x-btl-benchmark-cost` | **Benchmark reference** |
+| `x-btl-saved` | **Saved on reruns** (exact-cache) |
+| `x-btl-cache-tier` | **cache hits** |
 
 A QA tool makes *hundreds* of LLM calls per run — Verifi turns BTL's per-call
 economics into a first-class dashboard so you always see what a test run costs.
 
 ### 3. Graceful catalog compatibility
 BTL exposes 300+ models with differing capabilities. The client requests
-`response_format: json_object` and **automatically retries without it** for
-models that don't support JSON mode, then parses defensively — so any model in
-the catalog can be dropped into any stage.
+`response_format: json_object` and **automatically retries without it** for models
+that don't support JSON mode, then parses defensively — so any model in the
+catalog can be dropped into any stage.
 
-See `src/lib/btl.ts` (client + header capture), `src/lib/models.ts` (routing).
+See `src/lib/btl.ts` (client + header capture) and `src/lib/models.ts` (routing).
 
 ---
 
-## Architecture
+## Project structure
 
 ```
-Next.js 15 (App Router, TS, Tailwind v4)
-│
-├─ UI ............ dashboard + live run view (SSE)
-│   src/app, src/components
-│
-├─ API ........... POST /api/runs (start) · GET /api/runs/[id] · /stream (SSE)
-│   src/app/api
-│
-└─ Engine (Node) . BTL client + Playwright agent
-    src/lib/btl.ts ............ BTL runtime client, cost ledger from x-btl-* headers
-    src/lib/models.ts ......... per-stage model routing
-    src/lib/agent/browser.ts .. Playwright driver, element map, screenshots
-    src/lib/agent/planner.ts .. generates test cases         (BTL)
-    src/lib/agent/executor.ts . agentic vision browser loop  (BTL)
-    src/lib/agent/analyst.ts .. failure → bug report         (BTL)
-    src/lib/agent/orchestrator.ts . runs the pipeline, emits streaming events
+src/
+├─ app/
+│  ├─ page.tsx ................ dashboard (new run + recent runs)
+│  ├─ run/[id]/ ............... live run view (SSE)
+│  └─ api/runs/ ............... POST start · GET [id] · [id]/stream (SSE)
+├─ components/ ................ CostPanel · TestCard · EventLog · NewRunForm · RunsList
+└─ lib/
+   ├─ btl.ts .................. BTL runtime client + cost ledger from x-btl-* headers
+   ├─ models.ts .............. per-stage model routing
+   ├─ store.ts ............... in-memory + JSON persistence + SSE pub/sub
+   ├─ types.ts ............... domain types
+   └─ agent/
+      ├─ browser.ts .......... Playwright driver, element map, screenshots
+      ├─ planner.ts .......... generates test cases          (BTL)
+      ├─ executor.ts ......... agentic vision browser loop    (BTL)
+      ├─ analyst.ts .......... failure → structured bug report (BTL)
+      └─ orchestrator.ts ..... runs the pipeline, emits streaming events
 ```
 
 Runs and screenshots persist to `.data/runs/*.json` and `public/runs/<id>/`.
@@ -108,21 +159,28 @@ Requires Node 18+ (built on 22) and ~90 MB for the Playwright Chromium download.
 
 ```bash
 npm install            # also downloads Chromium via postinstall
-# .env already contains a BTL_API_KEY; edit models there if you like
+# create .env (see below) with your BTL key
 npm run dev            # http://localhost:3000
 ```
 
 Paste a URL (try `https://demo.playwright.dev/todomvc`) and hit **Run QA**.
 
-### Configuration (`.env`)
+### `.env`
 ```
-BTL_API_KEY=...                         # your BTL key
+BTL_API_KEY=gw_...                          # your BTL key
 BTL_BASE_URL=https://api.badtheorylabs.com/v1
 VERIFI_PLANNER_MODEL=gemini-2.5-flash
 VERIFI_AGENT_MODEL=gpt-4o-mini
 VERIFI_ANALYST_MODEL=gpt-5-mini-2025-08-07
 ```
 Swap any stage to any of BTL's 300+ models — the routing panel updates itself.
+
+---
+
+## Tech stack
+
+Next.js 15 (App Router) · TypeScript · Tailwind v4 · Playwright (Chromium) ·
+Server-Sent Events · BTL runtime (OpenAI-compatible).
 
 ---
 
