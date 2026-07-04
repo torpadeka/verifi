@@ -16,12 +16,12 @@ interface LightRun {
 }
 
 const dot: Record<string, string> = {
-  done: "bg-ok",
-  error: "bg-bad",
-  running: "bg-brand2 animate-pulse-dot",
+  done: "bg-pass",
+  error: "bg-fail",
+  running: "bg-carbon animate-pulse-dot",
   planning: "bg-warn animate-pulse-dot",
   analyzing: "bg-warn animate-pulse-dot",
-  queued: "bg-mut animate-pulse-dot",
+  queued: "bg-pebble animate-pulse-dot",
 };
 
 export default function RunsList() {
@@ -42,45 +42,42 @@ export default function RunsList() {
     };
   }, []);
 
-  if (runs === null)
-    return <div className="h-20 rounded-xl shimmer" />;
+  if (runs === null) return <div className="h-20 rounded-card shimmer" />;
 
   if (runs.length === 0)
     return (
-      <div className="rounded-xl border border-dashed border-line p-8 text-center text-mut text-sm">
+      <div className="rounded-card border border-dashed border-line2/60 bg-snow/50 p-8 text-center text-stone text-[14px]">
         No runs yet. Paste a URL above to launch your first AI QA run.
       </div>
     );
 
   return (
-    <div className="grid gap-2.5">
+    <div className="grid gap-3">
       {runs.map((r) => (
         <a
           key={r.id}
           href={`/run/${r.id}`}
-          className="flex items-center gap-4 rounded-xl border border-line bg-panel/60 hover:bg-panel2 hover:border-brand/40 transition px-4 py-3 group"
+          className="flex items-center gap-4 rounded-card bg-snow shadow-subtle hover:shadow-card px-5 py-4 group transition"
         >
-          <span className={`w-2 h-2 rounded-full ${dot[r.status] || "bg-mut"}`} />
+          <span className={`w-2 h-2 rounded-full shrink-0 ${dot[r.status] || "bg-pebble"}`} />
           <div className="min-w-0 flex-1">
-            <div className="truncate font-medium text-[15px]">{r.url}</div>
-            <div className="text-xs text-mut font-mono">{r.id}</div>
+            <div className="truncate font-medium text-[15px] text-carbon">{r.url}</div>
+            <div className="text-[12px] text-pebble">{r.id}</div>
           </div>
           {r.total > 0 && (
-            <div className="hidden sm:flex items-center gap-2 text-xs">
-              <span className="text-ok">{r.passed}✓</span>
-              <span className="text-bad">{r.failed}✗</span>
-              <span className="text-mut">/ {r.total}</span>
+            <div className="hidden sm:flex items-center gap-2.5 text-[13px]">
+              <span className="text-pass font-medium">{r.passed}✓</span>
+              <span className="text-fail font-medium">{r.failed}✗</span>
+              <span className="text-pebble">/ {r.total}</span>
             </div>
           )}
           <div className="text-right">
-            <div className="text-xs uppercase tracking-wide text-mut">{r.status}</div>
+            <div className="text-[11px] uppercase tracking-[0.06em] text-stone">{r.status}</div>
             {r.charge > 0 && (
-              <div className="text-[11px] font-mono text-brand2">
-                ${r.charge.toFixed(5)}
-              </div>
+              <div className="text-[12px] text-graphite tabular-nums">${r.charge.toFixed(5)}</div>
             )}
           </div>
-          <span className="text-mut group-hover:text-brand2 transition">→</span>
+          <span className="text-pebble group-hover:text-carbon transition">→</span>
         </a>
       ))}
     </div>

@@ -1,5 +1,21 @@
 import type { Metadata } from "next";
+import { Inter, DM_Sans } from "next/font/google";
 import "./globals.css";
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+// DM Sans stands in for PP Radio Grotesk Light (per DESIGN.md substitute list).
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  weight: ["300", "400", "500"],
+  variable: "--font-display",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Verifi — AI QA, powered by BTL Runtime",
@@ -9,32 +25,36 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${inter.variable} ${dmSans.variable}`}>
       <body>
-        <header className="border-b border-line/70 backdrop-blur sticky top-0 z-30 bg-ink/70">
-          <div className="mx-auto max-w-6xl px-5 h-14 flex items-center justify-between">
-            <a href="/" className="flex items-center gap-2.5 group">
-              <span className="grid place-items-center w-7 h-7 rounded-lg bg-gradient-to-br from-brand to-brand2 text-ink font-black text-sm">
-                V
-              </span>
-              <span className="font-semibold tracking-tight">
-                Verifi
-                <span className="text-mut font-normal"> · AI QA</span>
-              </span>
-            </a>
-            <div className="flex items-center gap-4 text-xs text-mut">
-              <span className="hidden sm:inline">runtime by</span>
-              <span className="px-2 py-1 rounded-md border border-line bg-panel font-mono text-brand2">
-                BTL
-              </span>
-            </div>
+        <header className="sticky top-0 z-30 px-5 pt-4">
+          <div className="mx-auto max-w-[1120px]">
+            <nav className="flex items-center justify-between bg-snow rounded-[32px] px-5 h-14 shadow-subtle">
+              <a href="/" className="flex items-center gap-2.5">
+                <span className="grid place-items-center w-7 h-7 rounded-full bg-carbon text-snow text-sm font-semibold">
+                  V
+                </span>
+                <span className="font-medium tracking-tight text-carbon">
+                  Verifi
+                  <span className="text-stone font-normal"> · AI QA</span>
+                </span>
+              </a>
+              <div className="flex items-center gap-4 text-[13px] text-stone">
+                <span className="hidden sm:inline">runtime by</span>
+                <span className="px-3 py-1 rounded-[100px] bg-fog text-graphite font-medium tracking-tight">
+                  BTL
+                </span>
+              </div>
+            </nav>
           </div>
         </header>
-        <main className="mx-auto max-w-6xl px-5 py-8">{children}</main>
-        <footer className="mx-auto max-w-6xl px-5 py-8 text-xs text-mut/70 border-t border-line/50 mt-12">
+
+        <main className="mx-auto max-w-[1120px] px-5 pt-8 pb-6">{children}</main>
+
+        <footer className="mx-auto max-w-[1120px] px-5 py-10 mt-8 text-[13px] text-pebble border-t border-line">
           Verifi runs every test through the BTL runtime
-          (<span className="font-mono">/v1/chat/completions</span>). Multi-model
-          routing · live cost telemetry · exact-cache savings on reruns.
+          (<span className="text-graphite">/v1/chat/completions</span>).
+          Multi-model routing · live cost telemetry · exact-cache savings on reruns.
         </footer>
       </body>
     </html>

@@ -1,19 +1,47 @@
 @import "tailwindcss";
 
+/* ── Dialog design system ─────────────────────────────────────────────
+   Neutral off-white showroom. One warm orange CTA. See DESIGN.md. */
 @theme {
-  --color-fg: #e6e9f2;
-  --color-ink: #06070a;
-  --color-panel: #0e1017;
-  --color-panel2: #151824;
-  --color-line: #232838;
-  --color-mut: #8b93a7;
-  --color-brand: #6d5efc;
-  --color-brand2: #22d3ee;
-  --color-ok: #34d399;
-  --color-warn: #fbbf24;
-  --color-bad: #f87171;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Segoe UI Mono", monospace;
+  /* Surfaces & neutrals */
+  --color-fog: #f7f7f7;      /* page canvas */
+  --color-snow: #ffffff;     /* card surface */
+  --color-deep: #242433;     /* dark card (terminal / contrast) */
+  --color-carbon: #000000;   /* headings, primary text */
+  --color-ink: #181825;      /* body text, borders (midnight) */
+  --color-graphite: #484758; /* secondary copy */
+  --color-stone: #636363;    /* supporting text, nav labels */
+  --color-pebble: #949494;   /* placeholder, disabled */
+  --color-ash: #8b8b8b;      /* tertiary, faint strokes */
+  --color-line: #e6e4e0;     /* hairline dividers */
+  --color-line2: #b2b2b2;    /* stronger borders */
+
+  /* Accent — CTAs ONLY */
+  --color-tangerine: #f69251;
+  --color-tangerine-ink: #b45f22; /* darker tangerine for on-light text where truly needed */
+  --color-dusty: #c97b84;    /* semantic hover/highlight */
+
+  /* Functional status (small use only: dots, text, thin borders — never fills) */
+  --color-pass: #2f8f6b;
+  --color-fail: #c85a4e;
+  --color-warn: #b07a37;
+
+  /* Radii */
+  --radius-card: 24px;
+  --radius-overlay: 32px;
+  --radius-inner: 12px;
+  --radius-sm: 8px;
+  --radius-btn: 28px;
+  --radius-badge: 100px;
+
+  /* Shadows — near-invisible, edge-defining */
+  --shadow-subtle: 0px 2px 3px -2px rgba(24, 24, 37, 0.12);
+  --shadow-btn: 0px 1px 2px 0px rgba(0, 0, 0, 0.04),
+    0px 2px 4px 0px rgba(0, 0, 0, 0.02), 0px 4px 8px 0px rgba(0, 0, 0, 0.02);
+  --shadow-card: 0px 1px 2px 0px rgba(0, 0, 0, 0.04),
+    0px 8px 24px -12px rgba(24, 24, 37, 0.10);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -21,39 +49,43 @@
 html, body {
   margin: 0;
   padding: 0;
-  background: var(--color-ink);
-  color: #e6e9f2;
-  font-family: var(--font-sans);
+  background: var(--color-fog);
+  color: var(--color-ink);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-body {
-  background:
-    radial-gradient(900px 500px at 15% -10%, rgba(109, 94, 252, 0.14), transparent 60%),
-    radial-gradient(700px 400px at 100% 0%, rgba(34, 211, 238, 0.08), transparent 55%),
-    var(--color-ink);
-  min-height: 100vh;
+body { min-height: 100vh; }
+
+/* Display type — DM Sans stands in for PP Radio Grotesk Light. Weight 300 at
+   large sizes gives the pencil-drawn editorial headline the spec calls for. */
+.font-display {
+  font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 300;
+  letter-spacing: -0.014em;
 }
 
-::selection { background: rgba(109, 94, 252, 0.35); }
+::selection { background: rgba(246, 146, 81, 0.25); }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #262b3b; border-radius: 8px; }
-::-webkit-scrollbar-thumb:hover { background: #313850; }
+::-webkit-scrollbar-thumb { background: #d9d7d2; border-radius: 100px; }
+::-webkit-scrollbar-thumb:hover { background: #c7c5bf; }
 
-@keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+@keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 .animate-pulse-dot { animation: pulse-dot 1.2s ease-in-out infinite; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
-.animate-spin-slow { animation: spin 1s linear infinite; }
+.animate-spin-slow { animation: spin 0.9s linear infinite; }
 
-@keyframes shimmer {
-  0% { background-position: -400px 0; }
-  100% { background-position: 400px 0; }
-}
+@keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
 .shimmer {
-  background: linear-gradient(90deg, #151824 25%, #1c2030 50%, #151824 75%);
+  background: linear-gradient(90deg, #f0efec 25%, #e7e5e1 50%, #f0efec 75%);
   background-size: 800px 100%;
   animation: shimmer 1.4s infinite linear;
 }
+
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.animate-rise { animation: rise 0.35s ease both; }

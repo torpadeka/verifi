@@ -37,21 +37,23 @@ export default function NewRunForm() {
   return (
     <form
       onSubmit={submit}
-      className="max-w-2xl mx-auto w-full rounded-2xl border border-line bg-panel/80 p-5 sm:p-6 shadow-2xl shadow-black/40"
+      className="max-w-2xl mx-auto w-full bg-snow rounded-[24px] p-6 sm:p-7 shadow-card"
     >
+      {/* URL row: square input + orange pill button */}
       <div className="flex flex-col sm:flex-row gap-3">
         <input
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://your-app.com"
           required
-          className="flex-1 bg-ink border border-line rounded-xl px-4 py-3 text-[15px] outline-none focus:border-brand focus:ring-2 focus:ring-brand/30 transition placeholder:text-mut/50"
+          aria-label="Target app URL"
+          className="flex-1 bg-fog border border-line2/60 rounded-none px-4 h-12 text-[16px] text-carbon outline-none focus:border-carbon transition placeholder:text-pebble"
         />
         <button
           disabled={busy}
-          className="rounded-xl px-5 py-3 font-semibold bg-gradient-to-r from-brand to-brand2 text-ink disabled:opacity-60 hover:brightness-110 active:scale-[.98] transition whitespace-nowrap"
+          className="rounded-[28px] px-6 h-12 font-medium text-[15px] bg-tangerine text-carbon shadow-btn disabled:opacity-60 hover:brightness-[1.03] active:scale-[.985] transition whitespace-nowrap"
         >
-          {busy ? "Starting…" : "Run QA →"}
+          {busy ? "Starting…" : "Run QA"}
         </button>
       </div>
 
@@ -60,11 +62,12 @@ export default function NewRunForm() {
         onChange={(e) => setDescription(e.target.value)}
         placeholder="Optional: describe your app or what to focus on (e.g. 'e-commerce store, test search and checkout')"
         rows={2}
-        className="mt-3 w-full bg-ink border border-line rounded-xl px-4 py-3 text-sm outline-none focus:border-brand/60 resize-none placeholder:text-mut/50"
+        aria-label="App description"
+        className="mt-3 w-full bg-fog border border-line2/60 rounded-none px-4 py-3 text-[14px] text-carbon outline-none focus:border-carbon resize-none placeholder:text-pebble"
       />
 
-      <div className="mt-3 flex flex-wrap items-center gap-5 text-sm text-mut">
-        <label className="flex items-center gap-2">
+      <div className="mt-4 flex flex-wrap items-center gap-6 text-[14px] text-stone">
+        <label className="flex items-center gap-2.5">
           Tests
           <input
             type="range"
@@ -72,11 +75,11 @@ export default function NewRunForm() {
             max={10}
             value={maxTests}
             onChange={(e) => setMaxTests(+e.target.value)}
-            className="accent-brand"
+            className="accent-tangerine"
           />
-          <span className="text-fg w-5 font-mono text-brand2">{maxTests}</span>
+          <span className="w-5 font-medium text-carbon tabular-nums">{maxTests}</span>
         </label>
-        <label className="flex items-center gap-2">
+        <label className="flex items-center gap-2.5">
           Max steps
           <input
             type="range"
@@ -84,14 +87,14 @@ export default function NewRunForm() {
             max={14}
             value={maxSteps}
             onChange={(e) => setMaxSteps(+e.target.value)}
-            className="accent-brand"
+            className="accent-tangerine"
           />
-          <span className="w-5 font-mono text-brand2">{maxSteps}</span>
+          <span className="w-5 font-medium text-carbon tabular-nums">{maxSteps}</span>
         </label>
         <button
           type="button"
           onClick={() => setShowAdv((s) => !s)}
-          className="ml-auto text-xs underline decoration-dotted hover:text-fg"
+          className="ml-auto text-[13px] text-stone underline decoration-dotted underline-offset-4 hover:text-carbon transition"
         >
           {showAdv ? "− login" : "+ login (optional)"}
         </button>
@@ -103,19 +106,21 @@ export default function NewRunForm() {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="test username"
-            className="bg-ink border border-line rounded-lg px-3 py-2 text-sm outline-none focus:border-brand/60"
+            aria-label="Test username"
+            className="bg-fog border border-line2/60 rounded-none px-3 h-11 text-[14px] text-carbon outline-none focus:border-carbon placeholder:text-pebble"
           />
           <input
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             type="password"
             placeholder="test password"
-            className="bg-ink border border-line rounded-lg px-3 py-2 text-sm outline-none focus:border-brand/60"
+            aria-label="Test password"
+            className="bg-fog border border-line2/60 rounded-none px-3 h-11 text-[14px] text-carbon outline-none focus:border-carbon placeholder:text-pebble"
           />
         </div>
       )}
 
-      {err && <p className="mt-3 text-sm text-bad">{err}</p>}
+      {err && <p className="mt-3 text-[13px] text-fail">{err}</p>}
     </form>
   );
 }
