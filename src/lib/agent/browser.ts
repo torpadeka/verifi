@@ -53,8 +53,10 @@ export class BrowserAgent {
   private counter = 0;
 
   constructor(private runId: string) {
-    this.shotDir = path.join(process.cwd(), "public", "runs", runId);
-    this.webBase = `/runs/${runId}`;
+    // Screenshots live under .data (NOT public/) so runtime writes don't trip the
+    // Next.js dev file-watcher; they're served back through /api/shot/<id>/<file>.
+    this.shotDir = path.join(process.cwd(), ".data", "runs", runId);
+    this.webBase = `/api/shot/${runId}`;
   }
 
   async start() {
@@ -116,7 +118,9 @@ export class BrowserAgent {
 
   async dataUrlOf(webPath: string): Promise<string | null> {
     try {
-      const file = path.join(process.cwd(), "public", webPath.replace(/^\//, ""));
+      // webPath is /api/shot/<id>/<file> -> .data/runs/<id>/<file>
+      const rel = webPath.replace(/^\/api\/shot\//, "");
+      const file = path.join(process.cwd(), ".data", "runs", rel);
       const buf = await fs.readFile(file);
       return `data:image/png;base64,${buf.toString("base64")}`;
     } catch {
