@@ -1,0 +1,21 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8" /><title>Buggy Shop — demo</title></head>
+<body style="font-family:system-ui,sans-serif;max-width:640px;margin:48px auto;color:#181825">
+  <h1>Buggy Shop</h1>
+  <p>Search our product catalog below.</p>
+  <input id="q" placeholder="Search products" style="padding:8px;width:240px" />
+  <button id="go" onclick="search()" style="padding:8px 16px">Search</button>
+  <div id="out" style="margin-top:16px;color:#636363"></div>
+  <script>
+    // deliberate console error (simulates a broken analytics/init script)
+    console.error("Analytics init failed: window.tracker is not a function");
+    // deliberate failed network requests (a dead internal API + a broken asset)
+    fetch("/api/checkout/session-does-not-exist").catch(function () {});
+    fetch("/static/missing-bundle-404.js").catch(function () {});
+    function search() {
+      document.getElementById("out").textContent = "No results found.";
+    }
+  </script>
+</body>
+</html>

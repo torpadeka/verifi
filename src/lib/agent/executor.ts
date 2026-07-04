@@ -39,7 +39,9 @@ export async function runTest(
   test.status = "running";
   test.startedAt = Date.now();
 
-  // fresh state per test
+  // fresh state per test — clear diagnostics so this test's load + actions are
+  // the only console/network errors it carries.
+  browser.resetDiagnostics();
   await browser.gotoUrl(startUrl).catch(() => {});
 
   const history: string[] = [];
@@ -169,5 +171,6 @@ Decide the next action as JSON.`;
     test.status = "failed";
     test.verdict = "Step budget exhausted without reaching the expected outcome.";
   }
+  test.diagnostics = browser.getDiagnostics();
   test.finishedAt = Date.now();
 }

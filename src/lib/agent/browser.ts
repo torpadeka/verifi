@@ -51,6 +51,8 @@ export class BrowserAgent {
   private shotDir: string;
   private webBase: string;
   private counter = 0;
+  private consoleErrs: string[] = [];
+  private networkErrs: string[] = [];
 
   constructor(private runId: string) {
     // Screenshots live under .data (NOT public/) so runtime writes don't trip the
@@ -69,6 +71,43 @@ export class BrowserAgent {
     });
     this.page = await ctx.newPage();
     this.page.setDefaultTimeout(12000);
+    this.attachDiagnostics();
+  }
+
+  // Listen for the runtime signals a screenshot can't show: JS errors and failed
+  // network calls. Buffers are reset per test so each test carries only its own.
+  private attachDiagnostics() {
+    const push = (arr: string[], msg: string) => {
+      if (arr.length < 60 && !arr.includes(msg)) arr.push(msg);
+    };
+    this.page.on("console", (m) => {
+      if (m.type() === "error") push(this.consoleErrs, m.text().slice(0, 240));
+    });
+    this.page.on("pageerror", (e) =>
+      push(this.consoleErrs, `Uncaught ${String(e.message).slice(0, 240)}`)
+    );
+    this.page.on("requestfailed", (r) => {
+      const f = r.failure()?.errorText || "failed";
+      // ignore benign aborts (e.g. navigation-cancelled prefetches)
+      if (/ABORTED|ERR_ABORTED/i.test(f)) return;
+      push(this.networkErrs, `${r.method()} ${r.url().slice(0, 160)} — ${f}`);
+    });
+    this.page.on("response", (res) => {
+      const s = res.status();
+      if (s >= 400) push(this.networkErrs, `${s} ${res.request().method()} ${res.url().slice(0, 160)}`);
+    });
+  }
+
+  resetDiagnostics() {
+    this.consoleErrs = [];
+    this.networkErrs = [];
+  }
+
+  getDiagnostics(): { console: string[]; network: string[] } {
+    return {
+      console: this.consoleErrs.slice(0, 15),
+      network: this.networkErrs.slice(0, 15),
+    };
   }
 
   async goto(url: string) {

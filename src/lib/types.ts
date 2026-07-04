@@ -36,6 +36,14 @@ export interface TestCase {
   startedAt?: number;
   finishedAt?: number;
   modelUsed?: string;
+  diagnostics?: Diagnostics; // console + network errors captured during the test
+}
+
+// Runtime signals captured from the real browser while a test runs — surfaces
+// issues (JS errors, failed requests) even when the UI still "looks" fine.
+export interface Diagnostics {
+  console: string[]; // console.error + uncaught page errors
+  network: string[]; // failed requests + 4xx/5xx responses
 }
 
 export interface BugReport {

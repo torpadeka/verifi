@@ -23,7 +23,13 @@ export async function analyzeFailure(
     )
     .join("\n");
 
-  const sys = `You are a QA failure analyst. Given a failed browser test, produce a crisp, developer-ready bug report. Base the root cause only on the evidence. Be specific and practical.`;
+  const sys = `You are a QA failure analyst. Given a failed browser test, produce a crisp, developer-ready bug report. Base the root cause only on the evidence. Console errors and failed network requests are strong root-cause signals — weigh them heavily. Be specific and practical.`;
+
+  const diag = test.diagnostics;
+  const diagText =
+    diag && (diag.console.length || diag.network.length)
+      ? `\nCONSOLE ERRORS DURING TEST:\n${diag.console.join("\n") || "(none)"}\nFAILED NETWORK REQUESTS DURING TEST:\n${diag.network.join("\n") || "(none)"}\n`
+      : "";
 
   const userText = `TEST: ${test.title}
 EXPECTED: ${test.expected}
@@ -31,7 +37,7 @@ FINAL VERDICT FROM AGENT: ${test.verdict || "(none)"}
 
 STEP TRACE:
 ${trace}
-
+${diagText}
 Return ONLY JSON:
 {"severity":"critical|major|minor","title":"one-line bug title","summary":"what went wrong from the user's perspective","root_cause":"most likely technical cause","suggested_fix":"concrete fix a developer can act on","failing_step":${idx + 1}}`;
 

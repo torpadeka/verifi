@@ -21,6 +21,8 @@ export default function TestCard({ test }: { test: TestCase; index?: number }) {
   const [open, setOpen] = useState(test.status === "failed");
   const s = statusStyle[test.status] || statusStyle.pending;
   const running = test.status === "running";
+  const diag = test.diagnostics;
+  const diagCount = (diag?.console.length || 0) + (diag?.network.length || 0);
 
   return (
     <div className="rounded-card bg-snow shadow-subtle overflow-hidden">
@@ -41,6 +43,14 @@ export default function TestCard({ test }: { test: TestCase; index?: number }) {
             {test.steps.length > 0 && <span className="text-pebble">· {test.steps.length} steps</span>}
           </div>
         </div>
+        {diagCount > 0 && (
+          <span
+            className="text-[11px] px-2 py-0.5 rounded-badge border border-warn/40 bg-warn/[.06] text-warn"
+            title="Console / network errors captured"
+          >
+            ⚠ {diagCount}
+          </span>
+        )}
         {test.bug && (
           <span className={`text-[11px] px-2.5 py-0.5 rounded-badge border ${sevStyle[test.bug.severity]}`}>
             {test.bug.severity}
@@ -80,6 +90,25 @@ export default function TestCard({ test }: { test: TestCase; index?: number }) {
           {test.verdict && !test.bug && (
             <div className="text-[13px] text-pass bg-pass/[.06] border-l-2 border-pass rounded-inner px-4 py-2.5">
               {test.verdict}
+            </div>
+          )}
+
+          {/* runtime diagnostics — console + network errors during the test */}
+          {diagCount > 0 && (
+            <div className="rounded-inner bg-fog border-l-2 border-warn p-3.5 space-y-1">
+              <div className="text-[12px] font-medium text-graphite mb-1">
+                Runtime diagnostics
+              </div>
+              {diag!.console.map((c, i) => (
+                <div key={"c" + i} className="text-[12px] text-fail font-mono break-all leading-snug">
+                  ▲ {c}
+                </div>
+              ))}
+              {diag!.network.map((n, i) => (
+                <div key={"n" + i} className="text-[12px] text-warn font-mono break-all leading-snug">
+                  ⇄ {n}
+                </div>
+              ))}
             </div>
           )}
 

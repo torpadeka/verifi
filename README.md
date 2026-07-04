@@ -12,6 +12,10 @@ and watch the real cost accrue from BTL's response headers.
 Built for the **BTL Runtime Hackathon** (Jul 3–5, 2026). Inspired by TestSprite
 and tester.army — rebuilt on the BTL runtime.
 
+Beyond what's on screen, Verifi captures **console errors and failed network
+requests** live from the real browser and feeds them into failure analysis — so
+root causes cite the actual JS error or 404, not just the visible symptom.
+
 ---
 
 ## Architecture
