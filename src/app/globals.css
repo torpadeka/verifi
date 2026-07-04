@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+@theme {
+  --color-fg: #e6e9f2;
+  --color-ink: #06070a;
+  --color-panel: #0e1017;
+  --color-panel2: #151824;
+  --color-line: #232838;
+  --color-mut: #8b93a7;
+  --color-brand: #6d5efc;
+  --color-brand2: #22d3ee;
+  --color-ok: #34d399;
+  --color-warn: #fbbf24;
+  --color-bad: #f87171;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Segoe UI Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-ink);
+  color: #e6e9f2;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background:
+    radial-gradient(900px 500px at 15% -10%, rgba(109, 94, 252, 0.14), transparent 60%),
+    radial-gradient(700px 400px at 100% 0%, rgba(34, 211, 238, 0.08), transparent 55%),
+    var(--color-ink);
+  min-height: 100vh;
+}
+
+::selection { background: rgba(109, 94, 252, 0.35); }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #262b3b; border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: #313850; }
+
+@keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+.animate-pulse-dot { animation: pulse-dot 1.2s ease-in-out infinite; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.animate-spin-slow { animation: spin 1s linear infinite; }
+
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, #151824 25%, #1c2030 50%, #151824 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite linear;
+}
