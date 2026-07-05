@@ -10,6 +10,7 @@ import { BrowserAgent } from "./browser";
 import { planTests } from "./planner";
 import { runTest } from "./executor";
 import { analyzeFailure } from "./analyst";
+import { executeApiRun } from "../api/orchestrator";
 
 function costSnapshot(run: Run) {
   const c = run.cost;
@@ -24,6 +25,10 @@ function costSnapshot(run: Run) {
 }
 
 export async function executeRun(run: Run) {
+  if (run.mode === "api") {
+    await executeApiRun(run);
+    return;
+  }
   const browser = new BrowserAgent(run.id);
   try {
     run.status = "planning";

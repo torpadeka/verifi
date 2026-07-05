@@ -2,6 +2,7 @@
 
 export type RunStatus = "queued" | "planning" | "running" | "analyzing" | "done" | "error";
 export type TestStatus = "pending" | "running" | "passed" | "failed" | "blocked";
+export type RunMode = "ui" | "api";
 export type StepStatus = "ok" | "fail" | "info";
 
 export interface StepAction {
@@ -96,11 +97,81 @@ export interface RunEvent {
   data?: unknown;
 }
 
+// ── API testing mode ────────────────────────────────────────────────────────
+
+export interface ApiAuth {
+  kind: "none" | "bearer" | "basic" | "header";
+  token?: string; // bearer token
+  username?: string; // basic
+  password?: string; // basic
+  headerName?: string; // custom header
+  headerValue?: string;
+}
+
+export interface HttpRequest {
+  method: string;
+  url: string; // fully resolved url actually sent
+  headers?: Record<string, string>;
+  body?: string; // serialized request body
+}
+
+export interface HttpResponse {
+  status: number;
+  statusText: string;
+  ok: boolean;
+  latencyMs: number;
+  headers: Record<string, string>;
+  body: string; // raw response text (truncated)
+  json?: unknown; // parsed body when JSON
+}
+
+export interface ApiCheck {
+  name: string; // e.g. "status is 200", "body has 'token'"
+  passed: boolean;
+  detail?: string;
+}
+
+export interface ApiCall {
+  index: number;
+  label: string; // what this call does
+  request: HttpRequest;
+  response?: HttpResponse;
+  checks: ApiCheck[];
+  status: StepStatus; // ok | fail | info
+  note?: string;
+  ts: number;
+}
+
+export interface ApiTest {
+  id: string;
+  title: string;
+  category: string; // happy | edge | auth | negative | contract
+  priority: "high" | "medium" | "low";
+  endpoint: string; // e.g. "POST /pet"
+  intent: string;
+  status: TestStatus;
+  calls: ApiCall[];
+  verdict?: string;
+  bug?: BugReport;
+  startedAt?: number;
+  finishedAt?: number;
+  latencyMs?: number; // total across calls
+}
+
+export interface ApiConfig {
+  baseUrl: string;
+  specUrl?: string;
+  auth?: ApiAuth;
+  description?: string;
+}
+
 export interface Run {
   id: string;
-  url: string;
+  mode: RunMode;
+  url: string; // target url (UI) or base url (API)
   description?: string;
   creds?: { username?: string; password?: string };
+  api?: ApiConfig;
   maxTests: number;
   maxSteps: number;
   status: RunStatus;
@@ -108,7 +179,8 @@ export interface Run {
   finishedAt?: number;
   summary?: string;
   error?: string;
-  tests: TestCase[];
+  tests: TestCase[]; // UI mode
+  apiTests: ApiTest[]; // API mode
   cost: CostLedger;
   events: RunEvent[];
   models: { planner: string; agent: string; analyst: string };

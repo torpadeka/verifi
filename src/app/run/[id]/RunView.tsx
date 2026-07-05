@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Run, RunEvent, TestCase } from "@/lib/types";
+import type { Run, RunEvent, TestCase, ApiTest } from "@/lib/types";
 import CostPanel from "@/components/CostPanel";
 import TestCard from "@/components/TestCard";
+import ApiTestCard from "@/components/ApiTestCard";
 import EventLog from "@/components/EventLog";
 
 export default function RunView({ id }: { id: string }) {
@@ -62,8 +63,10 @@ export default function RunView({ id }: { id: string }) {
     );
 
   const active = !["done", "error"].includes(run.status);
-  const passed = run.tests.filter((t) => t.status === "passed").length;
-  const failed = run.tests.filter((t) => t.status === "failed").length;
+  const isApi = run.mode === "api";
+  const items = isApi ? run.apiTests || [] : run.tests || [];
+  const passed = items.filter((t) => t.status === "passed").length;
+  const failed = items.filter((t) => t.status === "failed").length;
 
   return (
     <div className="space-y-6 animate-rise">
@@ -75,18 +78,21 @@ export default function RunView({ id }: { id: string }) {
             {run.url}
           </h1>
           <div className="flex items-center gap-3 mt-1.5 text-[14px]">
+            <span className="px-2 py-0.5 rounded-badge bg-fog text-graphite text-[11px] font-medium uppercase tracking-[0.06em]">
+              {isApi ? "API" : "Web UI"}
+            </span>
             <StatusBadge status={run.status} />
-            {run.tests.length > 0 && (
+            {items.length > 0 && (
               <span className="text-stone">
                 <span className="text-pass font-medium">{passed} passed</span> ·{" "}
-                <span className="text-fail font-medium">{failed} failed</span> · {run.tests.length} total
+                <span className="text-fail font-medium">{failed} failed</span> · {items.length} total
               </span>
             )}
           </div>
         </div>
         <div className="flex flex-wrap gap-2 text-[12px]">
           <ModelTag label="plan" model={run.models.planner} />
-          <ModelTag label="act" model={run.models.agent} />
+          {!isApi && <ModelTag label="act" model={run.models.agent} />}
           <ModelTag label="analyze" model={run.models.analyst} />
         </div>
       </div>
@@ -101,13 +107,19 @@ export default function RunView({ id }: { id: string }) {
 
       <div className="grid lg:grid-cols-[1fr_360px] gap-6 items-start">
         <div className="space-y-3 order-2 lg:order-1">
-          {run.tests.length === 0 ? (
+          {items.length === 0 ? (
             <div className="rounded-card bg-snow shadow-subtle p-6 text-[14px] text-stone flex items-center gap-3">
               <span className="w-4 h-4 rounded-full border-2 border-graphite border-t-transparent animate-spin-slow" />
-              {active ? "Exploring the app and generating a test plan…" : "No tests were generated."}
+              {active
+                ? isApi
+                  ? "Discovering endpoints and generating an API test plan…"
+                  : "Exploring the app and generating a test plan…"
+                : "No tests were generated."}
             </div>
+          ) : isApi ? (
+            (items as ApiTest[]).map((t) => <ApiTestCard key={t.id} test={t} />)
           ) : (
-            run.tests.map((t: TestCase) => <TestCard key={t.id} test={t} />)
+            (items as TestCase[]).map((t) => <TestCard key={t.id} test={t} />)
           )}
         </div>
 

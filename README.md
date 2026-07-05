@@ -16,6 +16,22 @@ Beyond what's on screen, Verifi captures **console errors and failed network
 requests** live from the real browser and feeds them into failure analysis — so
 root causes cite the actual JS error or 404, not just the visible symptom.
 
+## Two testing modes
+
+| Mode | Target | How it runs | Deployable |
+|------|--------|-------------|------------|
+| **Web UI** | any web app URL | LLM-driven Playwright browser agent (vision loop) | long-lived Node host |
+| **API** | REST base URL and/or OpenAPI/Swagger spec | LLM plans requests → deterministic HTTP runner sends + asserts | **serverless-friendly** (no browser) |
+
+**API mode** parses an OpenAPI/Swagger spec (or works from a plain description),
+has the planner design happy-path, negative, edge, and **multi-call chained**
+tests (extract a token/id from one response, use it in the next), then a
+deterministic HTTP runner executes them and validates status codes, JSON schema
+(key/type/value assertions), and latency. Failures become the same structured bug
+reports. Because execution makes **zero LLM calls** (only plan + analyze hit the
+runtime), API runs are far cheaper than UI runs — and, with no browser, this mode
+runs on serverless/Vercel.
+
 ---
 
 ## Architecture

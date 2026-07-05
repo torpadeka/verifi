@@ -7,3 +7,5 @@ out/
 public/runs/
 *.log
 next-env.d.ts
+
+tsconfig.tsbuildinfo

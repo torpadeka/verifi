@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 interface LightRun {
   id: string;
+  mode: string;
   url: string;
   status: string;
   createdAt: number;
@@ -61,7 +62,12 @@ export default function RunsList() {
         >
           <span className={`w-2 h-2 rounded-full shrink-0 ${dot[r.status] || "bg-pebble"}`} />
           <div className="min-w-0 flex-1">
-            <div className="truncate font-medium text-[15px] text-carbon">{r.url}</div>
+            <div className="flex items-center gap-2">
+              <span className="px-1.5 py-0.5 rounded-badge bg-fog text-graphite text-[10px] font-medium uppercase tracking-[0.06em] shrink-0">
+                {r.mode === "api" ? "API" : "UI"}
+              </span>
+              <span className="truncate font-medium text-[15px] text-carbon">{r.url}</span>
+            </div>
             <div className="text-[12px] text-pebble">{r.id}</div>
           </div>
           {r.total > 0 && (
