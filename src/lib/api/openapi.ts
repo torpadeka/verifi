@@ -90,7 +90,7 @@ export function summarizeSpec(spec: any, fallbackBase?: string): SpecSummary {
     }
   }
 
-  return { title: spec?.info?.title, baseUrl, endpoints: endpoints.slice(0, 60) };
+  return { title: spec?.info?.title, baseUrl, endpoints: endpoints.slice(0, 40) };
 }
 
 export function endpointsToPrompt(eps: EndpointSummary[]): string {

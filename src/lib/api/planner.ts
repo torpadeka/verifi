@@ -85,7 +85,7 @@ Produce exactly ${maxTests} distinct API test cases as JSON:
     "extract":{"id":"id"}
   }]
 }]}
-Return ONLY the JSON object.`;
+Keep it compact: 1-2 calls per test, at most 3 assertions per call, minimal request bodies. Output ONLY the JSON object, no markdown, no extra whitespace.`;
 
   const { content } = await chat({
     model: MODELS.planner,
@@ -93,7 +93,7 @@ Return ONLY the JSON object.`;
     ledger,
     json: true,
     temperature: 0.4,
-    max_tokens: 3000,
+    max_tokens: 8000,
     messages: [
       { role: "system", content: sys },
       { role: "user", content: user },

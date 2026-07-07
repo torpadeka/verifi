@@ -114,28 +114,73 @@ export function recordCost(ledger: CostLedger, c: CostEntry) {
   ledger.by_model[c.model] = (ledger.by_model[c.model] || 0) + 1;
 }
 
-// Robustly pull a JSON value out of a model response (handles ```json fences,
-// leading prose, etc.). Returns parsed value or throws.
+function tryParse(s: string): { ok: true; val: any } | { ok: false } {
+  try {
+    return { ok: true, val: JSON.parse(s) };
+  } catch {
+    return { ok: false };
+  }
+}
+
+// Return the still-open bracket closers for a JSON prefix, or null if the prefix
+// ends inside a string literal (respects escapes).
+function openStack(s: string): string[] | null {
+  const stack: string[] = [];
+  let inStr = false;
+  let esc = false;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (ch === "\\") esc = true;
+      else if (ch === '"') inStr = false;
+      continue;
+    }
+    if (ch === '"') inStr = true;
+    else if (ch === "{") stack.push("}");
+    else if (ch === "[") stack.push("]");
+    else if (ch === "}" || ch === "]") stack.pop();
+  }
+  return inStr ? null : stack;
+}
+
+// Robustly pull a JSON value out of a model response. Handles ```json fences,
+// leading prose, and — crucially — truncated output (planner responses cut off
+// at max_tokens): it salvages the maximal set of complete objects by closing at
+// the last balanced boundary. Returns parsed value or throws.
 export function parseJson<T = any>(s: string): T {
   const trimmed = s.trim();
-  try {
-    return JSON.parse(trimmed);
-  } catch {
-    /* fall through */
-  }
+
+  const direct = tryParse(trimmed);
+  if (direct.ok) return direct.val;
+
   const fence = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
   if (fence) {
-    try {
-      return JSON.parse(fence[1].trim());
-    } catch {
-      /* fall through */
+    const f = tryParse(fence[1].trim());
+    if (f.ok) return f.val;
+  }
+
+  const start = trimmed.search(/[[{]/);
+  if (start !== -1) {
+    const span = trimmed.slice(start);
+    const whole = tryParse(span);
+    if (whole.ok) return whole.val;
+
+    // Salvage truncation: walk back from the end to each closing bracket, close
+    // any still-open containers, and take the first candidate that parses.
+    let attempts = 0;
+    for (let i = span.length - 1; i >= 0 && attempts < 200; i--) {
+      const ch = span[i];
+      if (ch !== "}" && ch !== "]") continue;
+      attempts++;
+      const sub = span.slice(0, i + 1);
+      const stack = openStack(sub);
+      if (!stack) continue;
+      const candidate = sub + stack.slice().reverse().join("");
+      const r = tryParse(candidate);
+      if (r.ok) return r.val;
     }
   }
-  // grab the widest {...} or [...] span
-  const first = trimmed.search(/[[{]/);
-  const last = Math.max(trimmed.lastIndexOf("}"), trimmed.lastIndexOf("]"));
-  if (first !== -1 && last > first) {
-    return JSON.parse(trimmed.slice(first, last + 1));
-  }
+
   throw new Error(`Could not parse JSON from model output: ${s.slice(0, 200)}`);
 }
