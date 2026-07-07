@@ -3,7 +3,7 @@
 // API test cases — happy paths, negative/edge cases, and multi-call chains
 // (e.g. auth → use token) with per-call assertions and variable extraction.
 
-import { chat, parseJson } from "../btl";
+import { chatForJson } from "../btl";
 import { MODELS } from "../models";
 import type { ApiConfig, CostLedger } from "../types";
 
@@ -87,7 +87,7 @@ Produce exactly ${maxTests} distinct API test cases as JSON:
 }]}
 Keep it compact: 1-2 calls per test, at most 3 assertions per call, minimal request bodies. Output ONLY the JSON object, no markdown, no extra whitespace.`;
 
-  const { content } = await chat({
+  const parsed = await chatForJson<{ tests: PlannedApiTest[] }>({
     model: MODELS.planner,
     stage: "plan",
     ledger,
@@ -99,8 +99,6 @@ Keep it compact: 1-2 calls per test, at most 3 assertions per call, minimal requ
       { role: "user", content: user },
     ],
   });
-
-  const parsed = parseJson<{ tests: PlannedApiTest[] }>(content);
   return (parsed.tests || []).slice(0, maxTests).map((t) => ({
     ...t,
     calls: (t.calls || []).map((c) => ({ ...c, expect: c.expect || {} })),

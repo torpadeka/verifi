@@ -2,7 +2,7 @@
 // text, interactive elements) plus an optional product description, ask the
 // planner model to propose a prioritized set of end-to-end test cases.
 
-import { chat, parseJson } from "../btl";
+import { chatForJson } from "../btl";
 import { MODELS } from "../models";
 import type { CostLedger, TestCase } from "../types";
 import type { Snapshot } from "./browser";
@@ -40,20 +40,18 @@ Produce exactly ${maxTests} distinct test cases as JSON:
 {"tests":[{"title":"...","category":"Navigation|Search|Forms|Auth|Content|Errors|Responsiveness","priority":"high|medium|low","steps":["step 1","step 2"],"expected":"the observable success condition"}]}
 Return ONLY the JSON object.`;
 
-  const { content } = await chat({
+  const parsed = await chatForJson<{ tests: PlannedCase[] }>({
     model: MODELS.planner,
     stage: "plan",
     ledger,
     json: true,
     temperature: 0.4,
-    max_tokens: 1800,
+    max_tokens: 3000,
     messages: [
       { role: "system", content: sys },
       { role: "user", content: user },
     ],
   });
-
-  const parsed = parseJson<{ tests: PlannedCase[] }>(content);
   const cases = (parsed.tests || []).slice(0, maxTests);
 
   return cases.map((c, i) => ({

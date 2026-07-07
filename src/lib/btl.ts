@@ -41,6 +41,50 @@ function num(h: Headers, k: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+function appendNudge(messages: ChatMessage[], attempt: number): ChatMessage[] {
+  const copy = messages.map((m) => ({ ...m }));
+  for (let i = copy.length - 1; i >= 0; i--) {
+    if (copy[i].role === "user" && typeof copy[i].content === "string") {
+      copy[i] = {
+        ...copy[i],
+        content: `${copy[i].content}\n\n[retry ${attempt}] Return ONLY a valid JSON object — no markdown, no commentary.`,
+      };
+      break;
+    }
+  }
+  return copy;
+}
+
+// chat() + parseJson() with resilience: models (esp. gemini-2.5-flash) sometimes
+// return empty or malformed content, and BTL's exact-cache can replay a bad
+// completion. On failure we retry with a varied prompt (busts the cache + re-rolls)
+// and drop json_object mode on the final attempt. Cost of every attempt is still
+// recorded to the ledger.
+export async function chatForJson<T = any>(opts: ChatOptions): Promise<T> {
+  const base = opts.messages;
+  let lastErr = "empty output";
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await chat({
+      ...opts,
+      messages: attempt === 0 ? base : appendNudge(base, attempt),
+      json: attempt < 2, // last try: free-form, lean on parseJson
+      temperature:
+        attempt === 0 ? opts.temperature : Math.min(0.9, (opts.temperature ?? 0.4) + 0.25 * attempt),
+    });
+    const content = res.content?.trim();
+    if (content) {
+      try {
+        return parseJson<T>(content);
+      } catch (e: any) {
+        lastErr = e.message;
+      }
+    } else {
+      lastErr = "empty model output";
+    }
+  }
+  throw new Error(`Planner returned no valid JSON after 3 attempts (${lastErr})`);
+}
+
 export async function chat(opts: ChatOptions): Promise<ChatResult> {
   if (!KEY) throw new Error("BTL_API_KEY missing — set it in .env");
 
