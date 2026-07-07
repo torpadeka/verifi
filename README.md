@@ -16,6 +16,10 @@ Beyond what's on screen, Verifi captures **console errors and failed network
 requests** live from the real browser and feeds them into failure analysis — so
 root causes cite the actual JS error or 404, not just the visible symptom.
 
+## Demo
+
+📺 **2-minute demo video:** https://youtu.be/wze8sQ3KGCw
+
 ## Two testing modes
 
 | Mode | Target | How it runs | Deployable |
@@ -216,6 +220,7 @@ Server-Sent Events · BTL runtime (OpenAI-compatible).
 
 ## Submission
 
+- **Demo video (2 min):** https://youtu.be/wze8sQ3KGCw
 - **What we built:** Verifi — an autonomous AI QA web app. Point it at a web app
   URL or a REST API / OpenAPI spec; an AI agent plans tests, runs them (a real
   Playwright browser for UI, a deterministic HTTP runner for APIs), and files
