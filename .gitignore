@@ -9,3 +9,7 @@ public/runs/
 next-env.d.ts
 
 tsconfig.tsbuildinfo
+
+# kept local only (design spec + project instructions)
+CLAUDE.md
+DESIGN.md
