@@ -57,7 +57,7 @@ flowchart TB
             PW["🎭 Playwright<br/>real Chromium"]
         end
         BTLClient["BTL client<br/>reads x-btl-* → cost ledger"]
-        Store[("Store<br/>.data/runs + public/runs")]
+        Store[("Store<br/>.data/runs (JSON + shots)")]
     end
 
     User -->|paste URL| Dash -->|POST /api/runs| API --> Orch
@@ -154,22 +154,32 @@ src/
 ├─ app/
 │  ├─ page.tsx ................ dashboard (new run + recent runs)
 │  ├─ run/[id]/ ............... live run view (SSE)
-│  └─ api/runs/ ............... POST start · GET [id] · [id]/stream (SSE)
-├─ components/ ................ CostPanel · TestCard · EventLog · NewRunForm · RunsList
+│  └─ api/
+│     ├─ runs/ .............. POST start (UI or API mode) · GET [id] · [id]/stream (SSE)
+│     └─ shot/ .............. serves run screenshots from .data
+├─ components/ ................ CostPanel · TestCard · ApiTestCard · EventLog · NewRunForm · RunsList
 └─ lib/
-   ├─ btl.ts .................. BTL runtime client + cost ledger from x-btl-* headers
+   ├─ btl.ts .................. BTL client, cost ledger (x-btl-*), resilient JSON helpers
    ├─ models.ts .............. per-stage model routing
    ├─ store.ts ............... in-memory + JSON persistence + SSE pub/sub
-   ├─ types.ts ............... domain types
-   └─ agent/
-      ├─ browser.ts .......... Playwright driver, element map, screenshots
-      ├─ planner.ts .......... generates test cases          (BTL)
-      ├─ executor.ts ......... agentic vision browser loop    (BTL)
-      ├─ analyst.ts .......... failure → structured bug report (BTL)
-      └─ orchestrator.ts ..... runs the pipeline, emits streaming events
+   ├─ types.ts ............... domain types (UI + API)
+   ├─ agent/ ................. Web UI mode
+   │  ├─ browser.ts .......... Playwright driver, element map, screenshots, console/network capture
+   │  ├─ planner.ts .......... generates UI test cases          (BTL)
+   │  ├─ executor.ts ......... agentic vision browser loop       (BTL)
+   │  ├─ analyst.ts .......... failure → structured bug report   (BTL)
+   │  └─ orchestrator.ts ..... UI pipeline; dispatches API mode
+   └─ api/ ................... API mode
+      ├─ openapi.ts .......... OpenAPI / Swagger parser → endpoints
+      ├─ planner.ts .......... designs API tests + call chains   (BTL)
+      ├─ http.ts ............. request builder + sender (auth, {{vars}})
+      ├─ executor.ts ......... runs the call chain + assertions
+      ├─ analyst.ts .......... failure → bug report              (BTL)
+      └─ orchestrator.ts ..... API pipeline
 ```
 
-Runs and screenshots persist to `.data/runs/*.json` and `public/runs/<id>/`.
+Runs and screenshots persist to `.data/runs/*.json`; screenshots are served via
+`/api/shot/<id>/<file>`.
 
 ---
 
@@ -206,12 +216,13 @@ Server-Sent Events · BTL runtime (OpenAI-compatible).
 
 ## Submission
 
-- **What we built:** an autonomous AI QA web app that explores any site in a real
-  browser, writes & runs end-to-end tests, and files bug reports — with all AI
-  reasoning on the BTL runtime.
-- **BTL endpoint used:** `POST /v1/chat/completions` (OpenAI-compatible), across
-  `gemini-2.5-flash`, `gpt-4o-mini`, and `gpt-5-mini` via a single BTL key, with
-  live cost telemetry from the `x-btl-*` response headers.
-- **Team:** _<your team name & members>_
-
-You keep full ownership of whatever you build. 🖤
+- **What we built:** Verifi — an autonomous AI QA web app. Point it at a web app
+  URL or a REST API / OpenAPI spec; an AI agent plans tests, runs them (a real
+  Playwright browser for UI, a deterministic HTTP runner for APIs), and files
+  developer-ready bug reports with screenshots, captured console/network errors,
+  root cause, and a suggested fix.
+- **BTL runtime:** every reasoning step runs on `POST /v1/chat/completions`
+  (OpenAI-compatible), routed across `gemini-2.5-flash` (planning),
+  `gpt-4o-mini` (vision browser agent), and `gpt-5-mini` (failure analysis) via a
+  single BTL key, with live per-run cost telemetry read from the `x-btl-*`
+  response headers.
